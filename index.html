@@ -1,0 +1,100 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+	<meta charset="UTF-8" />
+	<title>Conway's Game of Life</title>
+	<script type="text/javascript" src="js/phaser.min.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+var screenWidth = 800;
+var screenHeight = 800;
+var cellXCount = 30;
+var cellYCount = 30;
+var updatesPerMinute = 60;
+
+var cellXSize = screenWidth / cellXCount;
+var cellYSize = screenHeight / cellYCount;
+
+var game = new Phaser.Game(screenWidth, screenHeight, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+
+var cells = [];
+var elapsedTime = 0;
+
+function preload() {
+	
+}
+
+function create() {
+	var cellSize = cellXCount * cellYCount;
+	while (cellSize--) {
+		cells.push(this.game.rnd.integerInRange(0, 1));
+	}
+
+	this.bmd=this.game.add.bitmapData(800,800);
+	this.ctx=this.bmd.context;
+
+	this.ctx.beginPath();
+	this.ctx.strokeStyle = "gray";
+	this.ctx.lineWidth = 1;
+
+
+
+	for (var x = 0; x < cellXCount; x++) {
+		this.ctx.moveTo(x * cellXSize, 0);
+		this.ctx.lineTo(x * cellXSize, screenHeight);
+		this.ctx.stroke();
+	}
+
+	for (var y = 0; y < cellYCount; y ++) {
+		this.ctx.moveTo(0, y * cellYSize);
+		this.ctx.lineTo(screenWidth, y * cellYSize);
+		this.ctx.stroke();
+	}
+
+	this.ctx.closePath();
+
+	this.game.add.sprite(0,0,this.bmd);
+
+}
+
+function update() {
+
+	elapsedTime += this.game.time.elapsed;
+	console.log(elapsedTime);
+	if (elapsedTime > 60 * 1000 / updatesPerMinute ) {
+		elapsedTime -= (60 * 1000 / updatesPerMinute);
+
+		for (var x = 0; x < cellXCount; x++) {
+			for (var y = 0; y < cellYCount; y++) {
+				cells[x + (cellXCount * y)] = (cells[x + (cellXCount * y)] === 1) ? 0 : 1;
+			}
+		}
+	}
+
+	var bmd=this.game.add.bitmapData(800,800);
+	var ctx=this.bmd.context;
+	ctx.fillStyle = "gray";
+
+	for (var x = 0; x < cellXCount; x++) {
+		for (var y = 0; y < cellYCount; y++) {
+			if (cells[x + (cellXCount * y)] === 1) {
+				ctx.fillRect(x * cellXSize, y * cellYSize, cellXSize, cellYSize)
+			}
+		}
+	}
+
+	this.game.add.sprite(0,0,bmd);
+}
+
+</script>
+
+</body>
+</html>
