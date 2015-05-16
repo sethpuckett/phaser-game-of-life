@@ -1,9 +1,9 @@
-<!doctype html> 
-<html lang="en"> 
-<head> 
-	<meta charset="UTF-8" />
-	<title>Conway's Game of Life</title>
-	<script type="text/javascript" src="js/phaser.min.js"></script>
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Conway's Game of Life</title>
+    <script type="text/javascript" src="js/phaser.js"></script>
     <style type="text/css">
         body {
             margin: 0;
@@ -14,85 +14,176 @@
 
 <script type="text/javascript">
 
-var screenWidth = 800;
-var screenHeight = 800;
-var cellXCount = 30;
-var cellYCount = 30;
-var updatesPerMinute = 60;
+    var screenWidth = 800;
+    var screenHeight = 600;
+    var cellXCount = 200;
+    var cellYCount = 150;
+    var edgeCount = 6;
+    var updatesPerMinute = 1600;
+    var fadeRate = .025; // 0-1 (no fade to immediate fade)
 
-var cellXSize = screenWidth / cellXCount;
-var cellYSize = screenHeight / cellYCount;
+    var backgroundColor = "purple";
+    var cellColor = "white";
+    var historyColor = "pink";
 
-var game = new Phaser.Game(screenWidth, screenHeight, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+    var totalXCount = cellXCount + (edgeCount * 2);
+    var totalYCount = cellYCount + (edgeCount * 2);
+    var cellXSize = screenWidth / cellXCount;
+    var cellYSize = screenHeight / cellYCount;
 
-var cells = [];
-var elapsedTime = 0;
+    var game = new Phaser.Game(screenWidth, screenHeight, Phaser.AUTO, '', { preload: preload, create: create, update: update });
 
-function preload() {
-	
-}
+    var cells = [];
+    var stagingCells = [];
+    var elapsedTime = 0;
+    var currentCellsSprite = null;
+    var historyCellSprite = null;
 
-function create() {
-	var cellSize = cellXCount * cellYCount;
-	while (cellSize--) {
-		cells.push(this.game.rnd.integerInRange(0, 1));
-	}
+    function preload() {
 
-	this.bmd=this.game.add.bitmapData(800,800);
-	this.ctx=this.bmd.context;
+    }
 
-	this.ctx.beginPath();
-	this.ctx.strokeStyle = "gray";
-	this.ctx.lineWidth = 1;
+    function create() {
+        var cellSize = (cellXCount + edgeCount * 2) * (cellYCount + edgeCount * 2);
 
+        while (cellSize--) {
+            cells.push(this.game.rnd.integerInRange(0, 1));
+        }
 
+        this.bmd=this.game.add.bitmapData(screenWidth ,screenHeight);
+        this.ctx=this.bmd.context;
 
-	for (var x = 0; x < cellXCount; x++) {
-		this.ctx.moveTo(x * cellXSize, 0);
-		this.ctx.lineTo(x * cellXSize, screenHeight);
-		this.ctx.stroke();
-	}
+        this.ctx.fillStyle = backgroundColor;
+        this.ctx.fillRect(0, 0, cellXSize * cellXCount, cellYSize * cellYCount);
 
-	for (var y = 0; y < cellYCount; y ++) {
-		this.ctx.moveTo(0, y * cellYSize);
-		this.ctx.lineTo(screenWidth, y * cellYSize);
-		this.ctx.stroke();
-	}
+        /*this.ctx.beginPath();
+        this.ctx.strokeStyle = "gray";
+        this.ctx.lineWidth = 1.5;
 
-	this.ctx.closePath();
+        for (var x = 0; x < cellXCount; x++) {
+            this.ctx.moveTo(x * cellXSize, 0);
+            this.ctx.lineTo(x * cellXSize, screenHeight);
+            this.ctx.stroke();
+        }
 
-	this.game.add.sprite(0,0,this.bmd);
+        for (var y = 0; y < cellYCount; y ++) {
+            this.ctx.moveTo(0, y * cellYSize);
+            this.ctx.lineTo(screenWidth, y * cellYSize);
+            this.ctx.stroke();
+        }
 
-}
+        this.ctx.closePath();*/
 
-function update() {
+        this.game.add.sprite(0,0,this.bmd);
+    }
 
-	elapsedTime += this.game.time.elapsed;
-	console.log(elapsedTime);
-	if (elapsedTime > 60 * 1000 / updatesPerMinute ) {
-		elapsedTime -= (60 * 1000 / updatesPerMinute);
+    function update() {
 
-		for (var x = 0; x < cellXCount; x++) {
-			for (var y = 0; y < cellYCount; y++) {
-				cells[x + (cellXCount * y)] = (cells[x + (cellXCount * y)] === 1) ? 0 : 1;
-			}
-		}
-	}
+        elapsedTime += this.game.time.physicsElapsed;
 
-	var bmd=this.game.add.bitmapData(800,800);
-	var ctx=this.bmd.context;
-	ctx.fillStyle = "gray";
+        if (elapsedTime > 60 / updatesPerMinute ) {
+            elapsedTime -= (60 / updatesPerMinute);
 
-	for (var x = 0; x < cellXCount; x++) {
-		for (var y = 0; y < cellYCount; y++) {
-			if (cells[x + (cellXCount * y)] === 1) {
-				ctx.fillRect(x * cellXSize, y * cellYSize, cellXSize, cellYSize)
-			}
-		}
-	}
+            for (var x = 0; x < totalXCount; x++) {
+                for (var y = 0; y < totalYCount; y++) {
+                    var index = x + (totalXCount * y);
+                    stagingCells[index] = getNewCellStatus(index);
+                }
+            }
 
-	this.game.add.sprite(0,0,bmd);
-}
+            cells = stagingCells.slice(0);
+
+            if (currentCellsSprite !== null) {
+                currentCellsSprite.kill();
+            }
+
+            var bmd = this.game.add.bitmapData(screenWidth, screenHeight);
+            var ctx = bmd.context;
+            ctx.fillStyle = cellColor;
+
+            var histBmd = this.game.make.bitmapData(screenWidth, screenHeight);
+            if (historyCellSprite !== null) {
+                histBmd.copyRect(historyCellSprite, new Phaser.Rectangle(0, 0, screenWidth, screenHeight));
+            }
+            var histCtx = histBmd.context;
+
+            if (historyCellSprite !== null) {
+                historyCellSprite.kill();
+            }
+
+            histCtx.globalAlpha = fadeRate;
+            histCtx.fillStyle = backgroundColor;
+            histCtx.fillRect(0, 0, cellXSize * cellXCount, cellYSize * cellYCount);
+
+            histCtx.globalAlpha = 1;
+            histCtx.fillStyle = historyColor;
+
+            for (var x = 0; x < cellXCount; x++) {
+                for (var y = 0; y < cellYCount; y++) {
+                    if (cells[(x + edgeCount) + (totalXCount * (y + edgeCount))] === 1) {
+                        ctx.fillRect(x * cellXSize, y * cellYSize, cellXSize, cellYSize)
+                        histCtx.fillRect(x * cellXSize, y * cellYSize, cellXSize, cellYSize)
+                    }
+                }
+            }
+
+            historyCellSprite = this.game.add.sprite(0, 0, histBmd);
+            currentCellsSprite = this.game.add.sprite(0,0,bmd);
+        }
+    }
+
+    function getNeighborCount(index) {
+        var ul, um, ur, ml, mr, ll, lm, lr;
+
+        if (index >= totalXCount) {
+            if (index % totalXCount > 0) {
+                ul = cells[index - totalXCount - 1];
+            }
+            um = cells[index - totalXCount];
+            if ((index + 1) % totalXCount > 0) {
+                ur = cells[index - totalXCount + 1];
+            }
+        }
+        if (index != 0 && index % totalXCount > 0) {
+            ml = cells[index - 1];
+        }
+        if ((index + 1) % totalXCount > 0) {
+            mr = cells[index + 1];
+        }
+        if (index < (totalXCount * totalYCount - totalXCount)) {
+            if (index != 0 && index % totalXCount > 0) {
+                ll = cells[index + totalXCount - 1];
+            }
+            lm = cells[index + totalXCount];
+            if ((index + 1) % totalXCount > 0) {
+                lr = cells[index + totalXCount + 1];
+            }
+        }
+
+        return ul + um + ur + ml + mr + ll + lm + lr;
+    }
+
+    function getNewCellStatus(index) {
+        var retVal = null;
+        var currentStatus = cells[index];
+        var neighborCount = getNeighborCount(index);
+
+        if (currentStatus === 1) {
+            if (neighborCount < 2 || neighborCount > 3) {
+                retVal = 0;
+            } else {
+                retVal = 1;
+            }
+        } else {
+            if (neighborCount === 3) {
+                retVal = 1;
+            } else {
+                retVal = 0;
+            }
+        }
+
+        return retVal;
+    }
 
 </script>
 
