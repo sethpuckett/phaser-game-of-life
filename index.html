@@ -14,17 +14,17 @@
 
 <script type="text/javascript">
 
-    var screenWidth = 800;
-    var screenHeight = 600;
-    var cellXCount = 200;
-    var cellYCount = 150;
+    var screenWidth = 1920;
+    var screenHeight = 1080;
+    var cellXCount = 400;
+    var cellYCount = 225;
     var edgeCount = 6;
-    var updatesPerMinute = 1600;
+    var updatesPerMinute = 600;
     var fadeRate = .025; // 0-1 (no fade to immediate fade)
 
-    var backgroundColor = "purple";
-    var cellColor = "white";
-    var historyColor = "pink";
+    var backgroundColor = "orange";
+    var cellColor = "blue";
+    var historyColor = "lightBlue";
 
     var totalXCount = cellXCount + (edgeCount * 2);
     var totalYCount = cellYCount + (edgeCount * 2);
@@ -45,9 +45,16 @@
 
     function create() {
         var cellSize = (cellXCount + edgeCount * 2) * (cellYCount + edgeCount * 2);
+        var cellSizeTotal = cellSize;
 
         while (cellSize--) {
-            cells.push(this.game.rnd.integerInRange(0, 1));
+            var cell = new Cell(cellSizeTotal - cellSize);
+            cell.alive = this.game.rnd.integerInRange(0, 1) === 0;
+            cells.push(cell);
+        }
+
+        for (var i = 0; i < cellSizeTotal; i++) {
+            setCellNeighbors(i);
         }
 
         this.bmd=this.game.add.bitmapData(screenWidth ,screenHeight);
@@ -84,20 +91,22 @@
         if (elapsedTime > 60 / updatesPerMinute ) {
             elapsedTime -= (60 / updatesPerMinute);
 
-            for (var x = 0; x < totalXCount; x++) {
-                for (var y = 0; y < totalYCount; y++) {
+            for (var y = 0; y < totalYCount; y++) {
+                for (var x = 0; x < totalXCount; x++) {
                     var index = x + (totalXCount * y);
                     stagingCells[index] = getNewCellStatus(index);
                 }
             }
 
-            cells = stagingCells.slice(0);
-
-            if (currentCellsSprite !== null) {
-                currentCellsSprite.kill();
+            for (var i = 0; i < stagingCells.length; i++) {
+                cells[i].alive = stagingCells[i] === 1;
             }
 
-            var bmd = this.game.add.bitmapData(screenWidth, screenHeight);
+            if (currentCellsSprite !== null) {
+                currentCellsSprite.destroy();
+            }
+
+            var bmd = this.game.make.bitmapData(screenWidth, screenHeight);
             var ctx = bmd.context;
             ctx.fillStyle = cellColor;
 
@@ -108,7 +117,7 @@
             var histCtx = histBmd.context;
 
             if (historyCellSprite !== null) {
-                historyCellSprite.kill();
+                historyCellSprite.destroy();
             }
 
             histCtx.globalAlpha = fadeRate;
@@ -120,7 +129,7 @@
 
             for (var x = 0; x < cellXCount; x++) {
                 for (var y = 0; y < cellYCount; y++) {
-                    if (cells[(x + edgeCount) + (totalXCount * (y + edgeCount))] === 1) {
+                    if (cells[(x + edgeCount) + (totalXCount * (y + edgeCount))].alive) {
                         ctx.fillRect(x * cellXSize, y * cellYSize, cellXSize, cellYSize)
                         histCtx.fillRect(x * cellXSize, y * cellYSize, cellXSize, cellYSize)
                     }
@@ -132,50 +141,19 @@
         }
     }
 
-    function getNeighborCount(index) {
-        var ul, um, ur, ml, mr, ll, lm, lr;
-
-        if (index >= totalXCount) {
-            if (index % totalXCount > 0) {
-                ul = cells[index - totalXCount - 1];
-            }
-            um = cells[index - totalXCount];
-            if ((index + 1) % totalXCount > 0) {
-                ur = cells[index - totalXCount + 1];
-            }
-        }
-        if (index != 0 && index % totalXCount > 0) {
-            ml = cells[index - 1];
-        }
-        if ((index + 1) % totalXCount > 0) {
-            mr = cells[index + 1];
-        }
-        if (index < (totalXCount * totalYCount - totalXCount)) {
-            if (index != 0 && index % totalXCount > 0) {
-                ll = cells[index + totalXCount - 1];
-            }
-            lm = cells[index + totalXCount];
-            if ((index + 1) % totalXCount > 0) {
-                lr = cells[index + totalXCount + 1];
-            }
-        }
-
-        return ul + um + ur + ml + mr + ll + lm + lr;
-    }
-
     function getNewCellStatus(index) {
         var retVal = null;
-        var currentStatus = cells[index];
-        var neighborCount = getNeighborCount(index);
+        var currentStatus = cells[index].alive;
+        var neighborCount = cells[index].getAliveNeighborCount();
 
-        if (currentStatus === 1) {
+        if (currentStatus) {
             if (neighborCount < 2 || neighborCount > 3) {
                 retVal = 0;
             } else {
                 retVal = 1;
             }
         } else {
-            if (neighborCount === 3) {
+            if (neighborCount === 3 || neighborCount === 6) {
                 retVal = 1;
             } else {
                 retVal = 0;
@@ -185,6 +163,49 @@
         return retVal;
     }
 
+    function Cell(index) {
+        this.index = index;
+        this.alive = false;
+
+        this.neighbors = [];
+    }
+
+    Cell.prototype.getAliveNeighborCount = function() {
+        var ret = 0;
+        for (var i = 0; i < this.neighbors.length; i++) {
+            if (this.neighbors[i].alive) {
+                ret++;
+            }
+        }
+        return ret;
+    };
+
+    function setCellNeighbors(index) {
+        if (index >= totalXCount) {
+            if (index % totalXCount > 0) {
+                cells[index].neighbors.push(cells[index - totalXCount - 1]);
+            }
+            cells[index].neighbors.push(cells[index - totalXCount]);
+            if ((index + 1) % totalXCount > 0) {
+                cells[index].neighbors.push(cells[index - totalXCount + 1]);
+            }
+        }
+        if (index != 0 && index % totalXCount > 0) {
+            cells[index].neighbors.push(cells[index - 1]);
+        }
+        if ((index + 1) % totalXCount > 0) {
+            cells[index].neighbors.push(cells[index + 1]);
+        }
+        if (index < (totalXCount * totalYCount - totalXCount)) {
+            if (index != 0 && index % totalXCount > 0) {
+                cells[index].neighbors.push(cells[index + totalXCount - 1]);
+            }
+            cells[index].neighbors.push(cells[index + totalXCount]);
+            if ((index + 1) % totalXCount > 0) {
+                cells[index].neighbors.push(cells[index + totalXCount + 1]);
+            }
+        }
+    }
 </script>
 
 </body>
