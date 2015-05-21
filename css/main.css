@@ -1,4 +1,39 @@
-body
+#wrapper
 {
-    margin: 0;
+	width: 900px;
+	margin: auto;
+	padding: 10px;
+}
+
+#game-area
+{
+	width: 800px;
+	height: 600px;
+	margin: auto;
+	margin-bottom: 20px;
+
+	border: 2px ridge #d3d3d3;
+}
+
+.heading
+{
+	color: #333333;
+	font-family: "Century Gothic", "sans-serif";
+	font-weight: bold;
+	text-align: center;
+}
+
+.text-content
+{
+	font-family: "Book Antiqua","Palatino","Palatino Linotype","Palatino LT STD","Georgia","serif"
+}
+
+.option-label
+{
+	font-family: "Book Antiqua","Palatino","Palatino Linotype","Palatino LT STD","Georgia","serif"
+}
+
+.option-input
+{
+	
 }
