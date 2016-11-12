@@ -1,14 +1,25 @@
+
+/**************************
+* Config
+***************************/
+
 var screenWidth = 1920;
 var screenHeight = 1080;
 var cellXCount = 160;
 var cellYCount = 90;
-var edgeCount = 6;
+var edgeCount = 6; // number of cells to calculate beyond each edge of the game area
 var updatesPerMinute = 600;
 var fadeRate = .1; // 0-1 (no fade to immediate fade)
 
 var backgroundColor = "white";
 var cellColor = "darkRed";
 var historyColor = "darkRed";
+
+
+
+/**************************
+* App
+***************************/
 
 var totalXCount = cellXCount + (edgeCount * 2);
 var totalYCount = cellYCount + (edgeCount * 2);
