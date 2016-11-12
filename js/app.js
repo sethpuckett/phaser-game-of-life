@@ -1,17 +1,14 @@
-/**
- * Created by Seth on 5/20/2015.
- */
 var screenWidth = 1920;
 var screenHeight = 1080;
-var cellXCount = 444;
-var cellYCount = 250;
+var cellXCount = 160;
+var cellYCount = 90;
 var edgeCount = 6;
-var updatesPerMinute = 1200;
-var fadeRate = 1; // 0-1 (no fade to immediate fade)
+var updatesPerMinute = 600;
+var fadeRate = .1; // 0-1 (no fade to immediate fade)
 
-var backgroundColor = "#6B0000";
-var cellColor = "darkBlue";
-var historyColor = "darkBlue";
+var backgroundColor = "white";
+var cellColor = "darkRed";
+var historyColor = "darkRed";
 
 var totalXCount = cellXCount + (edgeCount * 2);
 var totalYCount = cellYCount + (edgeCount * 2);
@@ -49,24 +46,6 @@ function create() {
 
     this.ctx.fillStyle = backgroundColor;
     this.ctx.fillRect(0, 0, cellXSize * cellXCount, cellYSize * cellYCount);
-
-    /*this.ctx.beginPath();
-     this.ctx.strokeStyle = "gray";
-     this.ctx.lineWidth = 1.5;
-
-     for (var x = 0; x < cellXCount; x++) {
-     this.ctx.moveTo(x * cellXSize, 0);
-     this.ctx.lineTo(x * cellXSize, screenHeight);
-     this.ctx.stroke();
-     }
-
-     for (var y = 0; y < cellYCount; y ++) {
-     this.ctx.moveTo(0, y * cellYSize);
-     this.ctx.lineTo(screenWidth, y * cellYSize);
-     this.ctx.stroke();
-     }
-
-     this.ctx.closePath();*/
 
     this.game.add.sprite(0,0,this.bmd);
 }
@@ -140,7 +119,7 @@ function getNewCellStatus(index) {
             retVal = 1;
         }
     } else {
-        if (neighborCount === 3 || neighborCount === 5 || neighborCount === 6) {
+        if (neighborCount === 3 || neighborCount === 6) {
             retVal = 1;
         } else {
             retVal = 0;
