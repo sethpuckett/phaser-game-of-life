@@ -17,6 +17,6 @@ Minimal HTML and CSS. Parameters are easily configurable in the _config_ section
 * **edgeCount**: number of cells to calculate beyond each edge of the game area
 * **updatesPerMinute**: number of 'turns' per second
 * **fadeRate**: how quickly cells 'fade away' after dying. Needs to be in the range 0-1, inclusive (no fade to immediate fade).
-* **backgroundColor**: color of the empty game area;
-* **cellColor**: color of living cells;
-* **historyColor**: color of dead, fading cells;
+* **backgroundColor**: color of the empty game area
+* **cellColor**: color of living cells
+* **historyColor**: color of dead, fading cells
